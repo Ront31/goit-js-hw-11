@@ -1,88 +1,132 @@
-import { fetchImages } from './fetchImages';
-import Notiflix from 'notiflix';
+import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import debounce from 'lodash.debounce';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-const input = document.querySelector('.search-form-input');
-const btnSearch = document.querySelector('.search-form-button');
-const gallery = document.querySelector('.gallery');
-const btnLoadMore = document.querySelector('.load-more');
-let gallerySimpleLightbox = new SimpleLightbox('.gallery a');
+const searchForm = document.querySelector('.search-form');
+const searchInput = document.querySelector('.search-form__input');
+const galleryElement = document.querySelector('.gallery');
+const loadMoreButton = document.querySelector('.load-more');
+const footerElement = document.querySelector('.footer');
 
-// btnLoadMore.style.display = 'none';
+let lastQuery = null;
+let page = 1;
+let totalPages = 0;
 
-let pageNumber = 1;
+const lightbox = new SimpleLightbox('.gallery .gallery__item');
+searchInput.focus();
 
-btnSearch.addEventListener('click', e => {
-  e.preventDefault();
-  cleanGallery();
-  const trimmedValue = input.value.trim();
-  if (trimmedValue !== '') {
-    fetchImages(trimmedValue, pageNumber).then(foundData => {
-      if (foundData.hits.length === 0) {
-        Notiflix.Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.'
-        );
-      } else {
-        renderImageList(foundData.hits);
-        Notiflix.Notify.success(
-          `Hooray! We found ${foundData.totalHits} images.`
-        );
-        btnLoadMore.style.display = 'block';
-        gallerySimpleLightbox.refresh();
-      }
+// function to fetch image data from Pixabay API
+async function fetchImage(query, options, page) {
+  try {
+    const response = await axios.get('https://pixabay.com/api/', {
+      params: {
+        key: '32579471-afdc8e0303a1983f0362481fc',
+        q: query,
+        image_type: 'photo',
+        orientation: 'horizontal',
+        safesearch: true,
+        page: page,
+        per_page: 40,
+        ...options,
+      },
     });
-  }
-});
 
-btnLoadMore.addEventListener('click', () => {
-  pageNumber++;
-  const trimmedValue = input.value.trim();
-  btnLoadMore.style.display = 'none';
-  fetchImages(trimmedValue, pageNumber).then(foundData => {
-    if (foundData.hits.length === 0) {
-      Notiflix.Notify.failure(
-        'Sorry, there are no images matching your search query. Please try again.'
+    // Calculate total number of pages of search results
+    totalPages = Math.ceil(response.data.totalHits / 40);
+
+    // Display notification acording to the state of reposne
+    if (response.data.totalHits === 0) {
+      Notify.failure(
+        `Sorry, there are no images matching your search query. Please try again.`,
+        {
+          position: 'right-top',
+        }
       );
-    } else {
-      renderImageList(foundData.hits);
-      Notiflix.Notify.success(
-        `Hooray! We found ${foundData.totalHits} images.`
-      );
-      btnLoadMore.style.display = 'block';
+    } else if (page === 1) {
+      Notify.success(`Hooray! We found ${response.data.totalHits} images.`, {
+        position: 'right-top',
+      });
     }
+
+    return response.data.hits;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// function to update gallery with fetched image data
+function updateGallery(imageData) {
+  let imageHTML = '';
+  imageData.forEach(image => {
+    imageHTML += `
+    <a class="gallery__item" href="${image.largeImageURL}">
+    <figure class="gallery__figure">
+      <img class="gallery__img" src="${image.webformatURL}" alt="${image.tags}" loading="lazy">
+      <figcaption class="gallery__figcaption">
+        <div class="gallery__caption">Likes: ${image.likes}</div>
+        <div class="gallery__caption">Views: ${image.views}</div>
+        <div class="gallery__caption">Comments: ${image.comments}</div>
+        <div class="gallery__caption">Downloads: ${image.downloads}</div>
+  </figcaption>
+    </figure>
+  </a>`;
   });
+
+  galleryElement.innerHTML += imageHTML;
+  lightbox.refresh();
+
+  if (page === 1 && totalPages !== 0) {
+    loadMoreButton.style.display = 'block';
+  } else {
+    loadMoreButton.style.display = 'none';
+  }
+}
+
+// IntersectionObserver to detect when user scrolls to bottom of page
+const footerObserver = new IntersectionObserver(async function (
+  entries,
+  observer
+) {
+  if (entries[0].isIntersecting === false) return;
+  if (page >= totalPages) {
+    Notify.info("You've reached the end of search results", {
+      position: 'right-bottom',
+    });
+    return;
+  }
+  page += 1;
+  const imageData = await fetchImage(lastQuery, {}, page);
+  updateGallery(imageData);
 });
 
-function renderImageList(images) {
-  console.log(images, 'images');
-  const markup = images
-    .map(image => {
-      console.log('img', image);
-      return `<div class="photo-card">
-       <a href="${image.largeImageURL}"><img class="photo" src="${image.webformatURL}" alt="${image.tags}" title="${image.tags}" loading="lazy"/></a>
-        <div class="info">
-           <p class="info-item">
-    <b>Likes</b> <span class="info-item-api"> ${image.likes} </span>
-</p>
-            <p class="info-item">
-                <b>Views</b> <span class="info-item-api">${image.views}</span>  
-            </p>
-            <p class="info-item">
-                <b>Comments</b> <span class="info-item-api">${image.comments}</span>  
-            </p>
-            <p class="info-item">
-                <b>Downloads</b> <span class="info-item-api">${image.downloads}</span> 
-            </p>
-        </div>
-    </div>`;
-    })
-    .join('');
-  gallery.innerHTML += markup;
-}
+// Debounced search function
+const debouncedSearch = debounce(async function () {
+  const query = searchInput.value;
 
-function cleanGallery() {
-  gallery.innerHTML = '';
-  pageNumber = 1;
-  btnLoadMore.style.display = 'none';
-}
+  if (query === lastQuery) {
+    return;
+  } else {
+    galleryElement.innerHTML = '';
+  }
+
+  lastQuery = query;
+  page = 1;
+
+  const imageData = await fetchImage(query, {}, page);
+  updateGallery(imageData);
+}, 300);
+
+// submit form event listener
+searchForm.addEventListener('submit', event => {
+  event.preventDefault();
+  debouncedSearch();
+});
+// load more button event listener
+loadMoreButton.addEventListener('click', async function () {
+  page += 1;
+  const imageData = await fetchImage(lastQuery, {}, page);
+  updateGallery(imageData);
+  footerObserver.observe(footerElement);
+});
