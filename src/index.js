@@ -22,7 +22,7 @@ async function fetchImage(query, options, page) {
   try {
     const response = await axios.get('https://pixabay.com/api/', {
       params: {
-        key: '32579471-afdc8e0303a1983f0362481fc',
+        key: '34890588-9da305e6d5e870774c8e66624',
         q: query,
         image_type: 'photo',
         orientation: 'horizontal',
