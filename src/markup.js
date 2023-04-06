@@ -21,6 +21,7 @@ export function updateGallery(imageData) {
     </figure>
   </a>`;
   });
+
   galleryElement.innerHTML += imageHTML;
   loadMoreButton.style.display = 'block';
   lightbox.refresh();

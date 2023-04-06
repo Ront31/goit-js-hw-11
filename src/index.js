@@ -9,6 +9,7 @@ const galleryElement = document.querySelector('.gallery');
 const loadMoreButton = document.querySelector('.load-more');
 
 let lastQuery = '';
+let totalPages = 0;
 let page = 1;
 
 async function fetchImage(query, options, page) {
