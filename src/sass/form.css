@@ -4,6 +4,12 @@
   margin: 0;
 }
 
+.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .header {
   background-color: #1c1e1f;
   display: flex;
@@ -89,4 +95,17 @@
   left: 0;
   text-align: center;
   line-height: 18px;
+}
+
+.load-more {
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 12px 12px;
+  background-color: #ebecf0;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  outline: black;
+  border-radius: 5px;
 }
