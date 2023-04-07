@@ -101,6 +101,7 @@
   display: flex;
   margin-left: auto;
   margin-right: auto;
+  cursor: pointer;
   padding: 12px 12px;
   background-color: #ebecf0;
   font-weight: 600;
