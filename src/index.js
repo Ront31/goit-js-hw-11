@@ -1,13 +1,14 @@
-const searchForm = document.querySelector('.search-form');
-const searchInput = document.querySelector('.search-form__input');
-const galleryElement = document.querySelector('.gallery');
-const loadMoreButton = document.querySelector('.load-more');
-
 import './sass/form.css';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import Notiflix from 'notiflix';
-import { page, perPage, API_KEY, fetchImages, axios } from './API.js';
+import { page, perPage, fetchImages } from './API.js';
+import { showFoundImages } from './markup.js';
+
+const searchForm = document.querySelector('.search-form');
+const searchInput = document.querySelector('.search-form__input');
+const galleryElement = document.querySelector('.gallery');
+const loadMoreButton = document.querySelector('.load-more');
 
 loadMoreButton.classList.add('is-hidden');
 
@@ -93,37 +94,37 @@ function clearPage() {
   loadMoreButton.classList.add('is-hidden');
 }
 
-function showFoundImages(result) {
-  const imageInfo = result.hits
-    .map(
-      ({
-        webformatURL,
-        largeImageURL,
-        tags,
-        likes,
-        views,
-        comments,
-        downloads,
-      }) => {
-        return `<a class="gallery__item" href="${largeImageURL}">
-    <figure class="gallery__figure">
-      <img class="gallery__img" src="${webformatURL}" alt="${tags}" loading="lazy">
-      <figcaption class="gallery__figcaption">
-        <div class="gallery__caption">Likes: ${likes}</div>
-        <div class="gallery__caption">Views: ${views}</div>
-        <div class="gallery__caption">Comments: ${comments}</div>
-        <div class="gallery__caption">Downloads: ${downloads}</div>
-  </figcaption>
-    </figure>
-  </a>`;
-      }
-    )
-    .join('');
+// function showFoundImages(result) {
+//   const imageInfo = result.hits
+//     .map(
+//       ({
+//         webformatURL,
+//         largeImageURL,
+//         tags,
+//         likes,
+//         views,
+//         comments,
+//         downloads,
+//       }) => {
+//         return `<a class="gallery__item" href="${largeImageURL}">
+//     <figure class="gallery__figure">
+//       <img class="gallery__img" src="${webformatURL}" alt="${tags}" loading="lazy">
+//       <figcaption class="gallery__figcaption">
+//         <div class="gallery__caption">Likes: ${likes}</div>
+//         <div class="gallery__caption">Views: ${views}</div>
+//         <div class="gallery__caption">Comments: ${comments}</div>
+//         <div class="gallery__caption">Downloads: ${downloads}</div>
+//   </figcaption>
+//     </figure>
+//   </a>`;
+//       }
+//     )
+//     .join('');
 
-  galleryElement.insertAdjacentHTML('beforeend', imageInfo);
+//   galleryElement.insertAdjacentHTML('beforeend', imageInfo);
 
-  return imageInfo;
-}
+//   return imageInfo;
+// }
 
 function scrollPage() {
   const { height: cardHeight } = document
